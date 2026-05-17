@@ -6,10 +6,16 @@
 # expected to live alongside it.
 #
 # Usage from any project directory:
-#   ANTHROPIC_API_KEY=sk-ant-... opencode-sandbox -p go-dev run
+#   opencode-sandbox -p go-dev run -e ANTHROPIC_API_KEY=sk-ant-...
+#
+# Override the bound project directory per-invocation:
+#   opencode-sandbox -p go-dev run -e ANTHROPIC_API_KEY=sk-ant-... -v $PWD:/workspace
+#
+# Expose to the LAN instead of loopback:
+#   opencode-sandbox -p go-dev run --bind 0.0.0.0 -e ANTHROPIC_API_KEY=sk-ant-...
 
 docker:
-  # host: tcp://build-box:2375   # applies to all profiles
+  # host: tcp://build-box:2375   # applies to all profiles; override with --docker-host
 
 default_profile: go-dev
 
@@ -23,9 +29,9 @@ profiles:
         OPENCODE_VERSION: latest
     run:
       env:
-        ANTHROPIC_API_KEY: ""   # set in your shell; see usage above
         GOFLAGS: "-mod=mod"
         OPENCODE_TELEMETRY: "0"
+        # Pass secrets at runtime: opencode-sandbox run -e ANTHROPIC_API_KEY=sk-ant-...
       mounts:
         # $PWD binds the directory you invoke the tool from, so opencode
         # sees the same files as your editor.
@@ -49,9 +55,9 @@ profiles:
         OPENCODE_VERSION: latest
     run:
       env:
-        ANTHROPIC_API_KEY: ""
         NODE_ENV: development
         OPENCODE_TELEMETRY: "0"
+        # Pass secrets at runtime: opencode-sandbox run -e ANTHROPIC_API_KEY=sk-ant-...
       mounts:
         - source: $PWD
           target: /workspace

@@ -19,14 +19,14 @@ profiles:
 
     run:
       env:
-        # Pass the key at runtime instead if you do not need it during the build.
-        # Values are literal strings; set the real key in your shell before running:
-        #   ANTHROPIC_API_KEY=sk-ant-... opencode-sandbox run
-        ANTHROPIC_API_KEY: ""
         OPENCODE_TELEMETRY: "0"
+        # Pass secrets at runtime with -e rather than storing them in config:
+        #   opencode-sandbox run -e ANTHROPIC_API_KEY=sk-ant-...
 
       mounts:
         # Bind the project directory you want opencode to work in.
+        # Override per-invocation with -v:
+        #   opencode-sandbox run -v ~/otherproject:/workspace
         - source: ~/workspace
           target: /workspace
 
@@ -43,4 +43,6 @@ profiles:
       workdir: /workspace
 
       port:
-        bind: 127.0.0.1   # use 0.0.0.0 to expose to the LAN
+        # Override at runtime to expose to the LAN:
+        #   opencode-sandbox run --bind 0.0.0.0
+        bind: 127.0.0.1
