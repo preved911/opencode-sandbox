@@ -76,6 +76,7 @@ func Start(ctx context.Context, cli *client.Client, cfg *config.Config, image, n
 		PortBindings: nat.PortMap{
 			containerPort: []nat.PortBinding{{HostIP: bindIP, HostPort: "0"}},
 		},
+		RestartPolicy: container.RestartPolicy{Name: container.RestartPolicyUnlessStopped},
 	}
 
 	created, err := cli.ContainerCreate(ctx, cConf, hConf, nil, nil, name)
