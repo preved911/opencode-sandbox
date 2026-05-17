@@ -22,6 +22,8 @@ default_profile: go-dev
 profiles:
 
   go-dev:
+    docker:
+      # host: tcp://go-build-box:2375   # overrides global docker.host for this profile only
     build:
       dockerfile: ./Dockerfile-go
       context: .

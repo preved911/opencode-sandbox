@@ -39,6 +39,7 @@ type Config struct {
 
 // DockerConfig holds per-profile docker settings.
 type DockerConfig struct {
+	Host       string `yaml:"host,omitempty"`
 	AttachHost string `yaml:"attach_host,omitempty"`
 }
 
@@ -168,7 +169,11 @@ func loadFile(path, profile string) (*Config, error) {
 	if c.Name == "" {
 		c.Name = name
 	}
-	c.DockerHost = f.Docker.Host
+	if c.Docker.Host != "" {
+		c.DockerHost = c.Docker.Host
+	} else {
+		c.DockerHost = f.Docker.Host
+	}
 	c.baseDir = baseDir
 	return c, nil
 }

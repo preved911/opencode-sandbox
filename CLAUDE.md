@@ -36,6 +36,7 @@ default_profile: go-dev    # used when -p is omitted and only one profile exists
 profiles:
   go-dev:
     docker:
+      host: tcp://...      # overrides global docker.host for this profile only
       attach_host: ...     # host used in the printed attach URL only
     build: ...
     run:
@@ -45,7 +46,7 @@ profiles:
         bind: 127.0.0.1
 ```
 
-`config.Load` resolves the file in order: explicit `-c` path → `./opencode-sandbox.yaml` → `$XDG_CONFIG_HOME/opencode-sandbox/config.yaml`. It auto-selects the profile if only one exists. The loaded `Config.DockerHost` is populated from the global `docker.host`; the CLI `--docker-host`/`-H` flag overrides it after loading.
+`config.Load` resolves the file in order: explicit `-c` path → `./opencode-sandbox.yaml` → `$XDG_CONFIG_HOME/opencode-sandbox/config.yaml`. It auto-selects the profile if only one exists. The loaded `Config.DockerHost` is resolved in priority order: CLI `--docker-host`/`-H` flag → profile `docker.host` → global `docker.host`.
 
 ### CLI layer (`internal/cli`)
 
