@@ -1,12 +1,12 @@
 # Profiles config. Install at ~/.config/opencode-sandbox/config.yaml so that
-# `container-sandbox -p go-dev run` and `container-sandbox -p node-dev run` work
-# from any directory without a project-local container-sandbox.yaml.
+# `opencode-sandbox -p go-dev run` and `opencode-sandbox -p node-dev run` work
+# from any directory without a project-local opencode-sandbox.yaml.
 #
 # Paths resolve relative to this file, so Dockerfile-go and Dockerfile-node are
 # expected to live alongside it.
 #
 # Usage from any project directory:
-#   ANTHROPIC_API_KEY=sk-ant-... container-sandbox -p go-dev run
+#   ANTHROPIC_API_KEY=sk-ant-... opencode-sandbox -p go-dev run
 
 profiles:
 

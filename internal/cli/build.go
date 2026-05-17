@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/preved911/container-sandbox/internal/build"
-	"github.com/preved911/container-sandbox/internal/config"
+	"github.com/preved911/opencode-sandbox/internal/build"
+	"github.com/preved911/opencode-sandbox/internal/config"
 )
 
 func newBuildCmd(rf *rootFlags) *cobra.Command {

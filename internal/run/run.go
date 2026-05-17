@@ -12,9 +12,9 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
-	"github.com/preved911/container-sandbox/internal/config"
-	"github.com/preved911/container-sandbox/internal/paths"
-	"github.com/preved911/container-sandbox/internal/sandbox"
+	"github.com/preved911/opencode-sandbox/internal/config"
+	"github.com/preved911/opencode-sandbox/internal/paths"
+	"github.com/preved911/opencode-sandbox/internal/sandbox"
 )
 
 // containerPort is the port opencode serves on inside the container.

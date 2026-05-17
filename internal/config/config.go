@@ -4,7 +4,7 @@
 //   - a single sandbox, with top-level name/docker/build/run keys, or
 //   - a profiles file, with a top-level "profiles" map keyed by name.
 //
-// Load resolves an explicit path, then ./container-sandbox.yaml, then the
+// Load resolves an explicit path, then ./opencode-sandbox.yaml, then the
 // central default at $HOME/.config/opencode-sandbox/config.yaml
 // ($XDG_CONFIG_HOME/opencode-sandbox/config.yaml when XDG_CONFIG_HOME is set).
 package config
@@ -16,7 +16,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/preved911/container-sandbox/internal/paths"
+	"github.com/preved911/opencode-sandbox/internal/paths"
 )
 
 // Config is a single sandbox configuration.
@@ -84,13 +84,13 @@ type file struct {
 //
 // Resolution order:
 //  1. explicitPath (-c flag) — profile applied if the file contains profiles
-//  2. ./container-sandbox.yaml — project-local override
+//  2. ./opencode-sandbox.yaml — project-local override
 //  3. $HOME/.config/opencode-sandbox/config.yaml — central default
 func Load(explicitPath, profile string) (*Config, error) {
 	if explicitPath != "" {
 		return loadFile(explicitPath, profile)
 	}
-	const localName = "container-sandbox.yaml"
+	const localName = "opencode-sandbox.yaml"
 	if _, err := os.Stat(localName); err == nil {
 		return loadFile(localName, profile)
 	}

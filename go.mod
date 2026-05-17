@@ -1,4 +1,4 @@
-module github.com/preved911/container-sandbox
+module github.com/preved911/opencode-sandbox
 
 go 1.25.0
 

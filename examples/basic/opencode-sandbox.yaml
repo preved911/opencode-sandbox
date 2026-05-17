@@ -17,7 +17,7 @@ run:
   env:
     # Pass the key at runtime instead if you do not need it during the build.
     # Values are literal strings; set the real key in your shell before running:
-    #   ANTHROPIC_API_KEY=sk-ant-... container-sandbox run
+    #   ANTHROPIC_API_KEY=sk-ant-... opencode-sandbox run
     ANTHROPIC_API_KEY: ""
     OPENCODE_TELEMETRY: "0"
 

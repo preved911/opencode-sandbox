@@ -5,10 +5,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/preved911/container-sandbox/internal/build"
-	"github.com/preved911/container-sandbox/internal/config"
-	"github.com/preved911/container-sandbox/internal/docker"
-	"github.com/preved911/container-sandbox/internal/run"
+	"github.com/preved911/opencode-sandbox/internal/build"
+	"github.com/preved911/opencode-sandbox/internal/config"
+	"github.com/preved911/opencode-sandbox/internal/docker"
+	"github.com/preved911/opencode-sandbox/internal/run"
 )
 
 func newRunCmd(rf *rootFlags) *cobra.Command {
@@ -40,7 +40,7 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 			case cfg.Build.Image != "":
 				image = cfg.Build.Image
 			case noBuild:
-				image = "container-sandbox/" + cfg.Name + ":latest"
+				image = "opencode-sandbox/" + cfg.Name + ":latest"
 			default:
 				image, err = build.ImageBuild(ctx, cfg, build.Options{Pull: pull})
 				if err != nil {

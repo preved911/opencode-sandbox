@@ -1,4 +1,4 @@
-// Command container-sandbox builds and runs isolated opencode containers.
+// Command opencode-sandbox builds and runs isolated opencode containers.
 package main
 
 import (
@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/preved911/container-sandbox/internal/cli"
+	"github.com/preved911/opencode-sandbox/internal/cli"
 )
 
 func main() {
