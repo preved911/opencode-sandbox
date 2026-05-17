@@ -13,7 +13,7 @@ import (
 	"github.com/preved911/opencode-sandbox/internal/sandbox"
 )
 
-func newRmCmd() *cobra.Command {
+func newRmCmd(rf *rootFlags) *cobra.Command {
 	var force, all bool
 	cmd := &cobra.Command{
 		Use:   "rm [name|id ...]",
@@ -26,7 +26,7 @@ func newRmCmd() *cobra.Command {
 				return fmt.Errorf("specify one or more containers, or pass --all")
 			}
 
-			cli, err := docker.NewClient("")
+			cli, err := docker.NewClient(rf.dockerHost)
 			if err != nil {
 				return err
 			}

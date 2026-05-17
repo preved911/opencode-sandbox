@@ -15,14 +15,14 @@ import (
 	"github.com/preved911/opencode-sandbox/internal/sandbox"
 )
 
-func newPsCmd() *cobra.Command {
+func newPsCmd(rf *rootFlags) *cobra.Command {
 	var all, quiet bool
 	cmd := &cobra.Command{
 		Use:   "ps",
 		Short: "List sandbox containers (filtered by opencode-sandbox label)",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cli, err := docker.NewClient("")
+			cli, err := docker.NewClient(rf.dockerHost)
 			if err != nil {
 				return err
 			}

@@ -26,6 +26,9 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if rf.dockerHost != "" {
+				cfg.DockerHost = rf.dockerHost
+			}
 			if nameOverride != "" {
 				cfg.Name = nameOverride
 			}
@@ -48,7 +51,7 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 				}
 			}
 
-			cli, err := docker.NewClient(cfg.Docker.Host)
+			cli, err := docker.NewClient(cfg.DockerHost)
 			if err != nil {
 				return fmt.Errorf("docker client: %w", err)
 			}
@@ -61,7 +64,7 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 
 			host := cfg.Docker.AttachHost
 			if host == "" {
-				host = docker.AttachHost(docker.EffectiveHost(cfg.Docker.Host))
+				host = docker.AttachHost(docker.EffectiveHost(cfg.DockerHost))
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "opencode attach http://%s:%d\n", host, res.HostPort)
 			return nil

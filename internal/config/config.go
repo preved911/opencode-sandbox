@@ -1,8 +1,15 @@
 // Package config defines the sandbox configuration schema and loader.
 //
-// A config file may be either:
-//   - a single sandbox, with top-level name/docker/build/run keys, or
-//   - a profiles file, with a top-level "profiles" map keyed by name.
+// Config files always use a profiles format:
+//
+//	docker:
+//	  host: tcp://...         # global docker host; overrides DOCKER_HOST for all profiles
+//	default_profile: go-dev   # used when -p/--profile is omitted
+//
+//	profiles:
+//	  go-dev:
+//	    build: ...
+//	    run: ...
 //
 // Load resolves an explicit path, then ./opencode-sandbox.yaml, then the
 // central default at $HOME/.config/opencode-sandbox/config.yaml
@@ -19,18 +26,19 @@ import (
 	"github.com/preved911/opencode-sandbox/internal/paths"
 )
 
-// Config is a single sandbox configuration.
+// Config is a single sandbox/profile configuration.
 type Config struct {
-	Name   string       `yaml:"name,omitempty"`
-	Docker DockerConfig `yaml:"docker,omitempty"`
-	Build  BuildConfig  `yaml:"build,omitempty"`
-	Run    RunConfig    `yaml:"run,omitempty"`
+	Name       string       `yaml:"name,omitempty"`
+	DockerHost string       // effective docker host; set by loader, overridable by CLI flag
+	Docker     DockerConfig `yaml:"docker,omitempty"`
+	Build      BuildConfig  `yaml:"build,omitempty"`
+	Run        RunConfig    `yaml:"run,omitempty"`
 
 	baseDir string
 }
 
+// DockerConfig holds per-profile docker settings.
 type DockerConfig struct {
-	Host       string `yaml:"host,omitempty"`
 	AttachHost string `yaml:"attach_host,omitempty"`
 }
 
@@ -70,22 +78,29 @@ type PortConfig struct {
 	Bind string `yaml:"bind,omitempty"`
 }
 
-// file is the on-disk shape; either profiles or the inline single-config fields are used.
-type file struct {
-	Profiles map[string]*Config `yaml:"profiles,omitempty"`
+// globalDockerConfig holds docker settings at the file/global scope.
+type globalDockerConfig struct {
+	Host string `yaml:"host,omitempty"`
+}
 
-	Name   string       `yaml:"name,omitempty"`
-	Docker DockerConfig `yaml:"docker,omitempty"`
-	Build  BuildConfig  `yaml:"build,omitempty"`
-	Run    RunConfig    `yaml:"run,omitempty"`
+// file is the on-disk shape.
+type file struct {
+	Docker         globalDockerConfig `yaml:"docker,omitempty"`
+	DefaultProfile string             `yaml:"default_profile,omitempty"`
+	Profiles       map[string]*Config `yaml:"profiles"`
 }
 
 // Load resolves the right config file and returns the selected sandbox.
 //
-// Resolution order:
-//  1. explicitPath (-c flag) — profile applied if the file contains profiles
-//  2. ./opencode-sandbox.yaml — project-local override
-//  3. $HOME/.config/opencode-sandbox/config.yaml — central default
+// Resolution order for the config file:
+//  1. explicitPath (-c flag)
+//  2. ./opencode-sandbox.yaml
+//  3. $HOME/.config/opencode-sandbox/config.yaml
+//
+// Profile selection within that file:
+//  1. profile (-p/--profile flag)
+//  2. default_profile in the file
+//  3. the sole profile if only one is defined
 func Load(explicitPath, profile string) (*Config, error) {
 	if explicitPath != "" {
 		return loadFile(explicitPath, profile)
@@ -128,33 +143,33 @@ func loadFile(path, profile string) (*Config, error) {
 	}
 	baseDir := filepath.Dir(abs)
 
-	if len(f.Profiles) > 0 {
-		if profile == "" {
-			return nil, fmt.Errorf("config %s defines profiles; select one with -p/--profile", abs)
-		}
-		c, ok := f.Profiles[profile]
-		if !ok {
-			return nil, fmt.Errorf("profile %q not found in %s", profile, abs)
-		}
-		if c.Name == "" {
-			c.Name = profile
-		}
-		c.baseDir = baseDir
-		return c, nil
+	if len(f.Profiles) == 0 {
+		return nil, fmt.Errorf("config %s: no profiles defined", abs)
 	}
 
-	c := &Config{
-		Name:    f.Name,
-		Docker:  f.Docker,
-		Build:   f.Build,
-		Run:     f.Run,
-		baseDir: baseDir,
+	name := profile
+	if name == "" {
+		name = f.DefaultProfile
 	}
-	if c.Name == "" {
-		if cwd, err := os.Getwd(); err == nil {
-			c.Name = filepath.Base(cwd)
+	if name == "" {
+		if len(f.Profiles) == 1 {
+			for k := range f.Profiles {
+				name = k
+			}
+		} else {
+			return nil, fmt.Errorf("config %s defines %d profiles; select one with -p/--profile or set default_profile", abs, len(f.Profiles))
 		}
 	}
+
+	c, ok := f.Profiles[name]
+	if !ok {
+		return nil, fmt.Errorf("profile %q not found in %s", name, abs)
+	}
+	if c.Name == "" {
+		c.Name = name
+	}
+	c.DockerHost = f.Docker.Host
+	c.baseDir = baseDir
 	return c, nil
 }
 

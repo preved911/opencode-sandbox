@@ -8,11 +8,14 @@
 # Usage from any project directory:
 #   ANTHROPIC_API_KEY=sk-ant-... opencode-sandbox -p go-dev run
 
+docker:
+  # host: tcp://build-box:2375   # applies to all profiles
+
+default_profile: go-dev
+
 profiles:
 
   go-dev:
-    docker:
-      # host: tcp://build-box:2375
     build:
       dockerfile: ./Dockerfile-go
       context: .
@@ -39,8 +42,6 @@ profiles:
         bind: 127.0.0.1
 
   node-dev:
-    docker:
-      # host: tcp://build-box:2375
     build:
       dockerfile: ./Dockerfile-node
       context: .

@@ -89,8 +89,8 @@ func ImageBuild(ctx context.Context, cfg *config.Config, opts Options) (string, 
 
 	cmd := exec.CommandContext(ctx, "docker", args...)
 	cmd.Env = append(os.Environ(), "DOCKER_BUILDKIT=1")
-	if cfg.Docker.Host != "" {
-		cmd.Env = append(cmd.Env, "DOCKER_HOST="+cfg.Docker.Host)
+	if cfg.DockerHost != "" {
+		cmd.Env = append(cmd.Env, "DOCKER_HOST="+cfg.DockerHost)
 	}
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
