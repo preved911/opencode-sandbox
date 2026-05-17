@@ -1,0 +1,68 @@
+# Profiles config. Install at ~/.config/container-sandbox/config.yaml so that
+# `container-sandbox run go-dev` and `container-sandbox run node-dev` work from
+# any directory without a project-local container-sandbox.yaml.
+#
+# Paths resolve relative to this file, so Dockerfile.go and Dockerfile.node are
+# expected to live alongside it.
+#
+# Usage from any project directory:
+#   ANTHROPIC_API_KEY=sk-ant-... container-sandbox run go-dev
+
+profiles:
+
+  go-dev:
+    docker:
+      # host: tcp://build-box:2375
+    build:
+      dockerfile: ./Dockerfile.go
+      context: .
+      args:
+        OPENCODE_VERSION: latest
+    run:
+      env:
+        ANTHROPIC_API_KEY: ""   # set in your shell; see usage above
+        GOFLAGS: "-mod=mod"
+        OPENCODE_TELEMETRY: "0"
+      mounts:
+        # $PWD binds the directory you invoke the tool from, so opencode
+        # sees the same files as your editor.
+        - source: $PWD
+          target: /workspace
+        - source: ~/.gitconfig
+          target: /root/.gitconfig
+          readonly: true
+        - source: ~/.ssh
+          target: /root/.ssh
+          readonly: true
+      workdir: /workspace
+      port:
+        bind: 127.0.0.1
+
+  node-dev:
+    docker:
+      # host: tcp://build-box:2375
+    build:
+      dockerfile: ./Dockerfile.node
+      context: .
+      args:
+        OPENCODE_VERSION: latest
+    run:
+      env:
+        ANTHROPIC_API_KEY: ""
+        NODE_ENV: development
+        OPENCODE_TELEMETRY: "0"
+      mounts:
+        - source: $PWD
+          target: /workspace
+        - source: ~/.gitconfig
+          target: /root/.gitconfig
+          readonly: true
+        - source: ~/.ssh
+          target: /root/.ssh
+          readonly: true
+        # Reuse the host npm cache so installs inside the container stay fast.
+        - source: ~/.npm
+          target: /root/.npm
+      workdir: /workspace
+      port:
+        bind: 127.0.0.1

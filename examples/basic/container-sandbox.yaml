@@ -1,0 +1,42 @@
+name: basic-sandbox
+
+docker:
+  # host: tcp://1.2.3.4:2375   # remote daemon; falls back to $DOCKER_HOST or local socket
+  # attach_host: my-box.local   # host in the printed URL; auto-derived from `host` if omitted
+
+build:
+  dockerfile: ./Dockerfile
+  context: .
+  # Inject the AI provider key as a build-time secret so it is never baked into
+  # image layers.  The Dockerfile can consume it via RUN --mount=type=secret,id=api-key.
+  # secrets:
+  #   - id: api-key
+  #     env: ANTHROPIC_API_KEY
+
+run:
+  env:
+    # Pass the key at runtime instead if you do not need it during the build.
+    # Values are literal strings; set the real key in your shell before running:
+    #   ANTHROPIC_API_KEY=sk-ant-... container-sandbox run
+    ANTHROPIC_API_KEY: ""
+    OPENCODE_TELEMETRY: "0"
+
+  mounts:
+    # Bind the project directory you want opencode to work in.
+    - source: ~/workspace
+      target: /workspace
+
+    # Share your Git identity so commits from inside the container look correct.
+    - source: ~/.gitconfig
+      target: /root/.gitconfig
+      readonly: true
+
+    # Share your SSH keys so git-over-SSH works inside the container.
+    - source: ~/.ssh
+      target: /root/.ssh
+      readonly: true
+
+  workdir: /workspace
+
+  port:
+    bind: 127.0.0.1   # use 0.0.0.0 to expose to the LAN
