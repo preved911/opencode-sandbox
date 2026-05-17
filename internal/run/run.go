@@ -23,7 +23,8 @@ import (
 // containerPort is the port opencode serves on inside the container.
 const containerPort nat.Port = "4096/tcp"
 
-var entrypoint = []string{"opencode", "serve", "--host=0.0.0.0", "--port=4096"}
+var entrypoint = []string{"opencode"}
+var cmd = []string{"serve", "--hostname=0.0.0.0", "--port=4096"}
 
 // Result describes a successfully started sandbox.
 type Result struct {
@@ -55,9 +56,10 @@ func Start(ctx context.Context, cli *client.Client, cfg *config.Config, image, n
 	}
 
 	cConf := &container.Config{
-		Image:        image,
-		Entrypoint:   entrypoint,
-		Env:          envSlice,
+		Image:      image,
+		Entrypoint: entrypoint,
+		Cmd:        cmd,
+		Env:        envSlice,
 		WorkingDir:   cfg.Run.Workdir,
 		User:         cfg.Run.User,
 		ExposedPorts: nat.PortSet{containerPort: struct{}{}},
