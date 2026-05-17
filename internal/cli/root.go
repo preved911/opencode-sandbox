@@ -25,7 +25,7 @@ func newRootCmd() *cobra.Command {
 		Short:         "Manage isolated opencode containers",
 		Long:          "opencode-sandbox builds and runs containers that expose an opencode `serve` endpoint on a random host port, so you can attach a local opencode client to a sandboxed run.",
 		SilenceUsage:  true,
-		SilenceErrors: false,
+		SilenceErrors: true,
 	}
 	cmd.PersistentFlags().StringVarP(&rf.configPath, "config", "c", "", "config file path (default: ./opencode-sandbox.yaml → $HOME/.config/opencode-sandbox/config.yaml)")
 	cmd.PersistentFlags().StringVarP(&rf.profile, "profile", "p", "", "profile name (overrides default_profile in config)")

@@ -16,6 +16,8 @@
 
 docker:
   # host: tcp://build-box:2375   # applies to all profiles; override with --docker-host
+  # macos: true                  # set when the Docker host is macOS-based (Docker Desktop / Colima / OrbStack)
+  #                              # enables early validation that bind mount sources exist on the macOS host
 
 default_profile: go-dev
 

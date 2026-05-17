@@ -1,5 +1,7 @@
 docker:
   # host: tcp://1.2.3.4:2375   # remote daemon; falls back to $DOCKER_HOST or local socket
+  # macos: true                 # set when the Docker host is macOS-based (Docker Desktop / Colima / OrbStack)
+  #                             # enables early validation that bind mount sources exist on the macOS host
 
 # default_profile: basic        # uncomment to skip -p/--profile flag
 

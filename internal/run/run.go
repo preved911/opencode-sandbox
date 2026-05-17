@@ -5,6 +5,8 @@ package run
 import (
 	"context"
 	"fmt"
+	"os"
+	"runtime"
 	"strconv"
 
 	"github.com/docker/docker/api/types/container"
@@ -128,9 +130,17 @@ func buildMounts(cfg *config.Config) ([]mount.Mount, error) {
 			if err != nil {
 				return nil, fmt.Errorf("mount %d source: %w", i, err)
 			}
+			// When the Docker host is macOS-based (Docker Desktop / Colima / OrbStack),
+			// the daemon runs inside a Linux VM that mounts the macOS filesystem.
+			// Validate that the source exists on the macOS host so failures are
+			// caught early with a clear message rather than a daemon error.
+			if cfg.DockerMacOS && runtime.GOOS == "darwin" {
+				if _, err := os.Stat(abs); err != nil {
+					return nil, fmt.Errorf("mount %d: source path %s does not exist on the macOS host", i, abs)
+				}
+			}
 			mm.Source = abs
 		case mount.TypeVolume:
-			// Source may be empty (anonymous volume) or a named volume.
 			mm.Source = m.Source
 		}
 		out = append(out, mm)

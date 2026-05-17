@@ -28,11 +28,12 @@ import (
 
 // Config is a single sandbox/profile configuration.
 type Config struct {
-	Name       string       `yaml:"name,omitempty"`
-	DockerHost string       // effective docker host; set by loader, overridable by CLI flag
-	Docker     DockerConfig `yaml:"docker,omitempty"`
-	Build      BuildConfig  `yaml:"build,omitempty"`
-	Run        RunConfig    `yaml:"run,omitempty"`
+	Name         string       `yaml:"name,omitempty"`
+	DockerHost   string       // effective docker host; set by loader, overridable by CLI flag
+	DockerMacOS  bool         // true when the Docker host is macOS-based (Docker Desktop / Colima / OrbStack)
+	Docker       DockerConfig `yaml:"docker,omitempty"`
+	Build        BuildConfig  `yaml:"build,omitempty"`
+	Run          RunConfig    `yaml:"run,omitempty"`
 
 	baseDir string
 }
@@ -81,7 +82,8 @@ type PortConfig struct {
 
 // globalDockerConfig holds docker settings at the file/global scope.
 type globalDockerConfig struct {
-	Host string `yaml:"host,omitempty"`
+	Host  string `yaml:"host,omitempty"`
+	MacOS bool   `yaml:"macos,omitempty"`
 }
 
 // file is the on-disk shape.
@@ -174,6 +176,7 @@ func loadFile(path, profile string) (*Config, error) {
 	} else {
 		c.DockerHost = f.Docker.Host
 	}
+	c.DockerMacOS = f.Docker.MacOS
 	c.baseDir = baseDir
 	return c, nil
 }
