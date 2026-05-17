@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -13,9 +14,12 @@ import (
 
 func newRunCmd(rf *rootFlags) *cobra.Command {
 	var (
-		nameOverride string
-		noBuild      bool
-		pull         bool
+		nameOverride   string
+		noBuild        bool
+		pull           bool
+		envOverrides   []string
+		mountOverrides []string
+		bindOverride   string
 	)
 	cmd := &cobra.Command{
 		Use:   "run",
@@ -34,6 +38,27 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 			}
 			if cfg.Name == "" {
 				return fmt.Errorf("sandbox name is empty: set `name:` in the config or pass --name")
+			}
+
+			for _, e := range envOverrides {
+				k, v, err := parseEnvFlag(e)
+				if err != nil {
+					return err
+				}
+				if cfg.Run.Env == nil {
+					cfg.Run.Env = make(map[string]string)
+				}
+				cfg.Run.Env[k] = v
+			}
+			for _, m := range mountOverrides {
+				mount, err := parseMountFlag(m)
+				if err != nil {
+					return err
+				}
+				cfg.Run.Mounts = append(cfg.Run.Mounts, mount)
+			}
+			if bindOverride != "" {
+				cfg.Run.Port.Bind = bindOverride
 			}
 
 			ctx := cmd.Context()
@@ -73,5 +98,33 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 	cmd.Flags().StringVar(&nameOverride, "name", "", "override the sandbox/container name")
 	cmd.Flags().BoolVar(&noBuild, "no-build", false, "skip the build step (image must already exist)")
 	cmd.Flags().BoolVar(&pull, "pull", false, "pass --pull to docker build")
+	cmd.Flags().StringArrayVarP(&envOverrides, "env", "e", nil, "set or override an env var (KEY=VALUE); repeatable")
+	cmd.Flags().StringArrayVarP(&mountOverrides, "mount", "v", nil, "append a mount (source:target[:ro]); repeatable")
+	cmd.Flags().StringVar(&bindOverride, "bind", "", "override run.port.bind (e.g. 0.0.0.0)")
 	return cmd
+}
+
+// parseEnvFlag parses KEY=VALUE into key and value.
+func parseEnvFlag(s string) (string, string, error) {
+	idx := strings.IndexByte(s, '=')
+	if idx < 1 {
+		return "", "", fmt.Errorf("--env %q: expected KEY=VALUE", s)
+	}
+	return s[:idx], s[idx+1:], nil
+}
+
+// parseMountFlag parses source:target[:ro] into a Mount.
+func parseMountFlag(s string) (config.Mount, error) {
+	parts := strings.SplitN(s, ":", 3)
+	if len(parts) < 2 || parts[1] == "" {
+		return config.Mount{}, fmt.Errorf("--mount %q: expected source:target[:ro]", s)
+	}
+	m := config.Mount{Source: parts[0], Target: parts[1]}
+	if len(parts) == 3 {
+		if parts[2] != "ro" {
+			return config.Mount{}, fmt.Errorf("--mount %q: unsupported modifier %q (only :ro is supported)", s, parts[2])
+		}
+		m.ReadOnly = true
+	}
+	return m, nil
 }
