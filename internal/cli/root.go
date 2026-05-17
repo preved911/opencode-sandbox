@@ -34,7 +34,7 @@ func newRootCmd() *cobra.Command {
 	cmd.AddCommand(
 		newRunCmd(rf),
 		newBuildCmd(rf),
-		newPsCmd(rf),
+		newLsCmd(rf),
 		newRmCmd(rf),
 	)
 	return cmd

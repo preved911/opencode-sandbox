@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -101,9 +102,12 @@ func Start(ctx context.Context, cli *client.Client, cfg *config.Config, image, n
 		return nil, fmt.Errorf("parse host port %q: %w", bindings[0].HostPort, err)
 	}
 
+	// Use the actual name assigned by Docker (strips the leading "/").
+	actualName := strings.TrimPrefix(inspect.Name, "/")
+
 	return &Result{
 		ContainerID: created.ID,
-		Name:        name,
+		Name:        actualName,
 		HostPort:    port,
 	}, nil
 }

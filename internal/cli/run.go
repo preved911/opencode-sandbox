@@ -33,13 +33,6 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 			if rf.dockerHost != "" {
 				cfg.DockerHost = rf.dockerHost
 			}
-			if nameOverride != "" {
-				cfg.Name = nameOverride
-			}
-			if cfg.Name == "" {
-				return fmt.Errorf("sandbox name is empty: set `name:` in the config or pass --name")
-			}
-
 			for _, e := range envOverrides {
 				k, v, err := parseEnvFlag(e)
 				if err != nil {
@@ -82,7 +75,7 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 			}
 			defer cli.Close()
 
-			res, err := run.Start(ctx, cli, cfg, image, cfg.Name)
+			res, err := run.Start(ctx, cli, cfg, image, nameOverride)
 			if err != nil {
 				return err
 			}
@@ -95,7 +88,7 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&nameOverride, "name", "", "override the sandbox/container name")
+	cmd.Flags().StringVar(&nameOverride, "name", "", "container name (default: random)")
 	cmd.Flags().BoolVar(&noBuild, "no-build", false, "skip the build step (image must already exist)")
 	cmd.Flags().BoolVar(&pull, "pull", false, "pass --pull to docker build")
 	cmd.Flags().StringArrayVarP(&envOverrides, "env", "e", nil, "set or override an env var (KEY=VALUE); repeatable")

@@ -15,10 +15,10 @@ import (
 	"github.com/preved911/opencode-sandbox/internal/sandbox"
 )
 
-func newPsCmd(rf *rootFlags) *cobra.Command {
+func newLsCmd(rf *rootFlags) *cobra.Command {
 	var all, quiet bool
 	cmd := &cobra.Command{
-		Use:   "ps",
+		Use:   "ls",
 		Short: "List sandbox containers (filtered by opencode-sandbox label)",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
