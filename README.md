@@ -47,7 +47,7 @@ The command builds the image, starts the container, and prints the attach URL.
 |---------|-------------|
 | `run` | Build (unless `--no-build`) and start a sandbox, print the attach URL |
 | `build` | Build the sandbox image without starting a container |
-| `ls` | List sandbox containers (`-a` to include stopped/failed) |
+| `ps` | List sandbox containers (`-a` to include stopped/failed) |
 | `rm` | Remove sandbox containers by name/ID, or `--all` |
 
 ## Global flags
