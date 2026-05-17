@@ -39,7 +39,12 @@ func Start(ctx context.Context, cli *client.Client, cfg *config.Config, image, n
 		envSlice = append(envSlice, k+"="+v)
 	}
 
-	mounts, err := buildMounts(cfg)
+	// Bind mounts use HostConfig.Binds (the "source:target[:ro]" string form
+	// used by `docker run -v`) so that Docker Desktop's VirtioFS / gRPC-FUSE
+	// path-translation layer is triggered. The structured Mounts field bypasses
+	// that layer and causes "path does not exist" on macOS.
+	// Non-bind mounts (volume, tmpfs) continue to use HostConfig.Mounts.
+	binds, otherMounts, err := buildMounts(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +67,8 @@ func Start(ctx context.Context, cli *client.Client, cfg *config.Config, image, n
 		},
 	}
 	hConf := &container.HostConfig{
-		Mounts: mounts,
+		Binds:  binds,
+		Mounts: otherMounts,
 		PortBindings: nat.PortMap{
 			containerPort: []nat.PortBinding{{HostIP: bindIP, HostPort: "0"}},
 		},
@@ -100,57 +106,62 @@ func Start(ctx context.Context, cli *client.Client, cfg *config.Config, image, n
 	}, nil
 }
 
-func buildMounts(cfg *config.Config) ([]mount.Mount, error) {
-	out := make([]mount.Mount, 0, len(cfg.Run.Mounts))
+// buildMounts splits config mounts into bind strings (HostConfig.Binds) and
+// structured mounts (HostConfig.Mounts for volume/tmpfs).
+func buildMounts(cfg *config.Config) (binds []string, mounts []mount.Mount, err error) {
+	remote := docker.IsRemoteHost(cfg.DockerHost)
+
 	for i, m := range cfg.Run.Mounts {
 		if m.Target == "" {
-			return nil, fmt.Errorf("mount %d: target is required", i)
+			return nil, nil, fmt.Errorf("mount %d: target is required", i)
 		}
-		var mt mount.Type
+
 		switch m.Type {
 		case "", "bind":
-			mt = mount.TypeBind
-		case "volume":
-			mt = mount.TypeVolume
-		case "tmpfs":
-			mt = mount.TypeTmpfs
-		default:
-			return nil, fmt.Errorf("mount %d: unknown type %q", i, m.Type)
-		}
-		mm := mount.Mount{
-			Type:     mt,
-			Target:   m.Target,
-			ReadOnly: m.ReadOnly,
-		}
-		switch mt {
-		case mount.TypeBind:
 			if m.Source == "" {
-				return nil, fmt.Errorf("mount %d: bind source is required", i)
+				return nil, nil, fmt.Errorf("mount %d: bind source is required", i)
 			}
-			if docker.IsRemoteHost(cfg.DockerHost) {
-				// Remote daemon: pass the source path as-is so the daemon
-				// resolves it against its own filesystem. Callers must use
-				// absolute paths on the remote host.
-				mm.Source = m.Source
+
+			var src string
+			if remote {
+				// Remote daemon: pass path as-is; it must exist on the remote host.
+				src = m.Source
 			} else {
-				abs, err := paths.Expand(m.Source, cfg.BaseDir())
+				src, err = paths.Expand(m.Source, cfg.BaseDir())
 				if err != nil {
-					return nil, fmt.Errorf("mount %d source: %w", i, err)
+					return nil, nil, fmt.Errorf("mount %d source: %w", i, err)
 				}
-				// When the Docker host is macOS-based (Docker Desktop / Colima /
-				// OrbStack), validate the source exists locally so failures are
-				// caught early with a clear message rather than a daemon error.
 				if cfg.DockerMacOS && runtime.GOOS == "darwin" {
-					if _, err := os.Stat(abs); err != nil {
-						return nil, fmt.Errorf("mount %d: source path %s does not exist on the macOS host", i, abs)
+					if _, err := os.Stat(src); err != nil {
+						return nil, nil, fmt.Errorf("mount %d: source path %s does not exist on the macOS host", i, src)
 					}
 				}
-				mm.Source = abs
 			}
-		case mount.TypeVolume:
-			mm.Source = m.Source
+
+			spec := src + ":" + m.Target
+			if m.ReadOnly {
+				spec += ":ro"
+			}
+			binds = append(binds, spec)
+
+		case "volume":
+			mm := mount.Mount{
+				Type:     mount.TypeVolume,
+				Source:   m.Source,
+				Target:   m.Target,
+				ReadOnly: m.ReadOnly,
+			}
+			mounts = append(mounts, mm)
+
+		case "tmpfs":
+			mounts = append(mounts, mount.Mount{
+				Type:   mount.TypeTmpfs,
+				Target: m.Target,
+			})
+
+		default:
+			return nil, nil, fmt.Errorf("mount %d: unknown type %q", i, m.Type)
 		}
-		out = append(out, mm)
 	}
-	return out, nil
+	return binds, mounts, nil
 }
