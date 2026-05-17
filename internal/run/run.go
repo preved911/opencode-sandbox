@@ -32,6 +32,7 @@ type Result struct {
 	ContainerID string
 	Name        string
 	HostPort    int
+	Binds       []string // resolved bind specs (source:target[:ro]) passed to the daemon
 }
 
 // Start creates and starts a container named name running image.
@@ -109,6 +110,7 @@ func Start(ctx context.Context, cli *client.Client, cfg *config.Config, image, n
 		ContainerID: created.ID,
 		Name:        actualName,
 		HostPort:    port,
+		Binds:       binds,
 	}, nil
 }
 
@@ -130,8 +132,15 @@ func buildMounts(cfg *config.Config) (binds []string, mounts []mount.Mount, err 
 
 			var src string
 			if remote {
-				// Remote daemon: pass path as-is; it must exist on the remote host.
-				src = m.Source
+				// Remote daemon: expand env vars but require an absolute path — relative
+				// paths and ~ have no meaning on a remote host.
+				src = os.ExpandEnv(m.Source)
+				if src == "" {
+					return nil, nil, fmt.Errorf("mount %d: source expanded to empty string (unset variable?)", i)
+				}
+				if !strings.HasPrefix(src, "/") {
+					return nil, nil, fmt.Errorf("mount %d: remote bind source %q must be an absolute path", i, m.Source)
+				}
 			} else {
 				src, err = paths.Expand(m.Source, cfg.BaseDir())
 				if err != nil {

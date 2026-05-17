@@ -28,6 +28,9 @@ func Expand(p, baseDir string) (string, error) {
 		return "", errors.New("empty path")
 	}
 	p = os.ExpandEnv(p)
+	if p == "" {
+		return "", errors.New("path expanded to empty string (unset environment variable?)")
+	}
 	if strings.HasPrefix(p, "~") {
 		home, err := os.UserHomeDir()
 		if err != nil {

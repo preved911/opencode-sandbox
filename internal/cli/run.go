@@ -9,6 +9,7 @@ import (
 	"github.com/preved911/opencode-sandbox/internal/build"
 	"github.com/preved911/opencode-sandbox/internal/config"
 	"github.com/preved911/opencode-sandbox/internal/docker"
+	"github.com/preved911/opencode-sandbox/internal/paths"
 	"github.com/preved911/opencode-sandbox/internal/run"
 )
 
@@ -80,11 +81,16 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 				return err
 			}
 
+			out := cmd.OutOrStdout()
+			for _, b := range res.Binds {
+				fmt.Fprintf(out, "mount: %s\n", b)
+			}
+
 			host := cfg.Docker.AttachHost
 			if host == "" {
 				host = docker.AttachHost(docker.EffectiveHost(cfg.DockerHost))
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "opencode attach http://%s:%d\n", host, res.HostPort)
+			fmt.Fprintf(out, "opencode attach http://%s:%d\n", host, res.HostPort)
 			return nil
 		},
 	}
@@ -107,12 +113,19 @@ func parseEnvFlag(s string) (string, string, error) {
 }
 
 // parseMountFlag parses source:target[:ro] into a Mount.
+// The source is expanded immediately relative to the caller's CWD so that
+// relative paths (./subdir, ~/) resolve as the user expects from the command
+// line rather than against the config file's directory.
 func parseMountFlag(s string) (config.Mount, error) {
 	parts := strings.SplitN(s, ":", 3)
 	if len(parts) < 2 || parts[1] == "" {
 		return config.Mount{}, fmt.Errorf("--mount %q: expected source:target[:ro]", s)
 	}
-	m := config.Mount{Source: parts[0], Target: parts[1]}
+	src, err := paths.Expand(parts[0], "") // "" → relative paths resolve against CWD
+	if err != nil {
+		return config.Mount{}, fmt.Errorf("--mount %q: %w", s, err)
+	}
+	m := config.Mount{Source: src, Target: parts[1]}
 	if len(parts) == 3 {
 		if parts[2] != "ro" {
 			return config.Mount{}, fmt.Errorf("--mount %q: unsupported modifier %q (only :ro is supported)", s, parts[2])

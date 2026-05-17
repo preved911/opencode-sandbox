@@ -183,3 +183,13 @@ func loadFile(path, profile string) (*Config, error) {
 
 // BaseDir is the directory relative paths in this config are resolved against.
 func (c *Config) BaseDir() string { return c.baseDir }
+
+// DockerHostFrom tries to load the config and returns the effective docker host.
+// Returns empty string if the config cannot be loaded (e.g. no config file present).
+func DockerHostFrom(explicitPath, profile string) string {
+	cfg, err := Load(explicitPath, profile)
+	if err != nil {
+		return ""
+	}
+	return cfg.DockerHost
+}
