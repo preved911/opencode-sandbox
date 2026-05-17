@@ -15,6 +15,7 @@ import (
 	"github.com/docker/go-connections/nat"
 
 	"github.com/preved911/opencode-sandbox/internal/config"
+	"github.com/preved911/opencode-sandbox/internal/docker"
 	"github.com/preved911/opencode-sandbox/internal/paths"
 	"github.com/preved911/opencode-sandbox/internal/sandbox"
 )
@@ -126,20 +127,26 @@ func buildMounts(cfg *config.Config) ([]mount.Mount, error) {
 			if m.Source == "" {
 				return nil, fmt.Errorf("mount %d: bind source is required", i)
 			}
-			abs, err := paths.Expand(m.Source, cfg.BaseDir())
-			if err != nil {
-				return nil, fmt.Errorf("mount %d source: %w", i, err)
-			}
-			// When the Docker host is macOS-based (Docker Desktop / Colima / OrbStack),
-			// the daemon runs inside a Linux VM that mounts the macOS filesystem.
-			// Validate that the source exists on the macOS host so failures are
-			// caught early with a clear message rather than a daemon error.
-			if cfg.DockerMacOS && runtime.GOOS == "darwin" {
-				if _, err := os.Stat(abs); err != nil {
-					return nil, fmt.Errorf("mount %d: source path %s does not exist on the macOS host", i, abs)
+			if docker.IsRemoteHost(cfg.DockerHost) {
+				// Remote daemon: pass the source path as-is so the daemon
+				// resolves it against its own filesystem. Callers must use
+				// absolute paths on the remote host.
+				mm.Source = m.Source
+			} else {
+				abs, err := paths.Expand(m.Source, cfg.BaseDir())
+				if err != nil {
+					return nil, fmt.Errorf("mount %d source: %w", i, err)
 				}
+				// When the Docker host is macOS-based (Docker Desktop / Colima /
+				// OrbStack), validate the source exists locally so failures are
+				// caught early with a clear message rather than a daemon error.
+				if cfg.DockerMacOS && runtime.GOOS == "darwin" {
+					if _, err := os.Stat(abs); err != nil {
+						return nil, fmt.Errorf("mount %d: source path %s does not exist on the macOS host", i, abs)
+					}
+				}
+				mm.Source = abs
 			}
-			mm.Source = abs
 		case mount.TypeVolume:
 			mm.Source = m.Source
 		}

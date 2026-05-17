@@ -117,7 +117,20 @@ profiles:
 
 ### Docker host precedence
 
-`--docker-host` flag → profile `docker.host` → global `docker.host` → `DOCKER_HOST` env var
+`--docker-host` flag → profile `docker.host` → global `docker.host` → `DOCKER_HOST` env var → active Docker CLI context → SDK default
+
+### Bind mount sources and remote hosts
+
+When `docker.host` is a TCP or SSH endpoint, bind mount sources are passed to the daemon **as-is** — no local `~` or `$VAR` expansion is performed. Use absolute paths that exist on the remote machine:
+
+```yaml
+run:
+  mounts:
+    - source: /Users/remote-user/workspace   # absolute path on the remote host
+      target: /workspace
+```
+
+For local daemons (Unix socket or no explicit host) paths are expanded locally: `~`, `$VAR`, and relative paths resolve against the config file's directory.
 
 ### Profile selection
 

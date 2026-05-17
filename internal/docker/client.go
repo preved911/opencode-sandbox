@@ -108,6 +108,24 @@ func contextEndpointHost(configDir, name string) string {
 	return meta.Endpoints.Docker.Host
 }
 
+// IsRemoteHost reports whether host refers to a remote Docker daemon
+// (TCP, SSH, HTTP/HTTPS) rather than a local socket.
+func IsRemoteHost(host string) bool {
+	if host == "" {
+		return false
+	}
+	u, err := url.Parse(host)
+	if err != nil {
+		return false
+	}
+	switch u.Scheme {
+	case "tcp", "ssh", "http", "https":
+		return true
+	default:
+		return false
+	}
+}
+
 // AttachHost derives the host portion of the attach URL from a Docker host URL.
 //
 //	tcp://1.2.3.4:2375       → 1.2.3.4
