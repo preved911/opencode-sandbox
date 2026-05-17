@@ -56,7 +56,7 @@ profiles:
 
 - **`internal/build`** — shells out to `docker build` (uses BuildKit secrets), sets `DOCKER_HOST` from `cfg.DockerHost`
 - **`internal/run`** — uses the Docker Go SDK to create/start the container, publish port 4096/tcp to a random host port, and return the assigned port; when `docker.macos: true` is set in config and the tool runs on macOS (`runtime.GOOS == "darwin"`), bind mount sources are validated against the local macOS filesystem before the API call to surface missing-path errors early
-- **`internal/docker`** — thin wrapper: `NewClient` (SDK client), `EffectiveHost` (config → env fallback), `AttachHost` (derives printable hostname from a Docker host URL)
+- **`internal/docker`** — thin wrapper: `NewClient` (SDK client), `EffectiveHost` (config → env fallback), `AttachHost` (derives printable hostname from a Docker host URL); `NewClient` resolves the daemon endpoint in the same order as the Docker CLI: explicit host → `DOCKER_HOST` env → active Docker context (`DOCKER_CONTEXT` env or `currentContext` in `~/.docker/config.json`) → SDK default
 
 ### Safety invariant
 
