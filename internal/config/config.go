@@ -4,13 +4,12 @@
 //   - a single sandbox, with top-level name/docker/build/run keys, or
 //   - a profiles file, with a top-level "profiles" map keyed by name.
 //
-// Load resolves an explicit path, then ./container-sandbox.yaml, then a
-// named profile in the central config (~/.config/container-sandbox/config.yaml
-// or $XDG_CONFIG_HOME/container-sandbox/config.yaml).
+// Load resolves an explicit path, then ./container-sandbox.yaml, then the
+// central default at $HOME/.config/opencode-sandbox/config.yaml
+// ($XDG_CONFIG_HOME/opencode-sandbox/config.yaml when XDG_CONFIG_HOME is set).
 package config
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -83,11 +82,10 @@ type file struct {
 
 // Load resolves the right config file and returns the selected sandbox.
 //
-// Resolution:
-//   - explicitPath set        → load that file (profile arg used if file has profiles)
-//   - ./container-sandbox.yaml exists → load it
-//   - profile != ""           → look up in the central config
-//   - otherwise               → error
+// Resolution order:
+//  1. explicitPath (-c flag) — profile applied if the file contains profiles
+//  2. ./container-sandbox.yaml — project-local override
+//  3. $HOME/.config/opencode-sandbox/config.yaml — central default
 func Load(explicitPath, profile string) (*Config, error) {
 	if explicitPath != "" {
 		return loadFile(explicitPath, profile)
@@ -95,9 +93,6 @@ func Load(explicitPath, profile string) (*Config, error) {
 	const localName = "container-sandbox.yaml"
 	if _, err := os.Stat(localName); err == nil {
 		return loadFile(localName, profile)
-	}
-	if profile == "" {
-		return nil, errors.New("no config: pass a profile name or create ./container-sandbox.yaml (or use -c)")
 	}
 	central, err := centralConfigPath()
 	if err != nil {
@@ -107,14 +102,15 @@ func Load(explicitPath, profile string) (*Config, error) {
 }
 
 func centralConfigPath() (string, error) {
-	if x := os.Getenv("XDG_CONFIG_HOME"); x != "" {
-		return filepath.Join(x, "container-sandbox", "config.yaml"), nil
+	base := os.Getenv("XDG_CONFIG_HOME")
+	if base == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		base = filepath.Join(home, ".config")
 	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".config", "container-sandbox", "config.yaml"), nil
+	return filepath.Join(base, "opencode-sandbox", "config.yaml"), nil
 }
 
 func loadFile(path, profile string) (*Config, error) {
@@ -134,7 +130,7 @@ func loadFile(path, profile string) (*Config, error) {
 
 	if len(f.Profiles) > 0 {
 		if profile == "" {
-			return nil, fmt.Errorf("config %s defines profiles; pass one as an argument", abs)
+			return nil, fmt.Errorf("config %s defines profiles; select one with -p/--profile", abs)
 		}
 		c, ok := f.Profiles[profile]
 		if !ok {

@@ -12,15 +12,11 @@ import (
 func newBuildCmd(rf *rootFlags) *cobra.Command {
 	var pull bool
 	cmd := &cobra.Command{
-		Use:   "build [profile]",
+		Use:   "build",
 		Short: "Build the sandbox image without starting a container",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var profile string
-			if len(args) == 1 {
-				profile = args[0]
-			}
-			cfg, err := config.Load(rf.configPath, profile)
+			cfg, err := config.Load(rf.configPath, rf.profile)
 			if err != nil {
 				return err
 			}

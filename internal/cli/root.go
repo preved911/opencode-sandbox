@@ -14,6 +14,7 @@ func Execute(ctx context.Context) error {
 
 type rootFlags struct {
 	configPath string
+	profile    string
 }
 
 func newRootCmd() *cobra.Command {
@@ -25,7 +26,8 @@ func newRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: false,
 	}
-	cmd.PersistentFlags().StringVarP(&rf.configPath, "config", "c", "", "path to a container-sandbox.yaml file (default: ./container-sandbox.yaml)")
+	cmd.PersistentFlags().StringVarP(&rf.configPath, "config", "c", "", "config file path (default: ./container-sandbox.yaml → $HOME/.config/opencode-sandbox/config.yaml)")
+	cmd.PersistentFlags().StringVarP(&rf.profile, "profile", "p", "", "profile name to load from a profiles config file")
 
 	cmd.AddCommand(
 		newRunCmd(rf),

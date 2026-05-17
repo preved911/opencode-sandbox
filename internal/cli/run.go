@@ -18,15 +18,11 @@ func newRunCmd(rf *rootFlags) *cobra.Command {
 		pull         bool
 	)
 	cmd := &cobra.Command{
-		Use:   "run [profile]",
+		Use:   "run",
 		Short: "Build and start a sandbox, then print the opencode attach URL",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var profile string
-			if len(args) == 1 {
-				profile = args[0]
-			}
-			cfg, err := config.Load(rf.configPath, profile)
+			cfg, err := config.Load(rf.configPath, rf.profile)
 			if err != nil {
 				return err
 			}
